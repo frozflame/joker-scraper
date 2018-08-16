@@ -1,0 +1,2 @@
+include joker/scraper/VERSION
+include requirements.txt
