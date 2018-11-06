@@ -80,3 +80,14 @@ class BrowserManager(object):
     def set_element_attribute(self, element, key, value):
         js = "arguments[0].setAttribute('{}', '{}')".format(key, value)
         self.driver.execute_script(js, element)
+
+    def debug_selector(self, sl, **kwargs):
+        elements = self.select(sl)
+        kwargs.setdefault('sep', '\t')
+        if not elements:
+            print('-', 'NotFound', sl, **kwargs)
+            return
+        for i, elem in enumerate(elements[:3]):
+            si = '{}/{}'.format(i, len(elements))
+            tx = ' '.join(elem.text.splitlines())[:100]
+            print('-', si, repr(sl), tx, **kwargs)
