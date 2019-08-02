@@ -6,15 +6,16 @@ from __future__ import division, print_function
 import pickle
 import time
 
-from selenium import webdriver
+import selenium.webdriver
+from selenium.webdriver.firefox.options import Options
 
 
 def get_simplistic_driver():
-    firefox_profile = webdriver.FirefoxProfile()
-    firefox_profile.set_preference('permissions.default.image', 2)
-    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    firefox_profile.set_preference("media.volume_scale", "0.0")
-    return webdriver.Firefox(firefox_profile=firefox_profile)
+    prof = selenium.webdriver.FirefoxProfile()
+    prof.set_preference('permissions.default.image', 2)
+    prof.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+    prof.set_preference("media.volume_scale", "0.0")
+    return selenium.webdriver.Firefox(firefox_profile=prof)
 
 
 def until_success(func, retry, sleep, *args, **kwargs):
@@ -27,16 +28,23 @@ def until_success(func, retry, sleep, *args, **kwargs):
                 raise
 
 
+def get_firfox_driver(headless=False, proxy=5, image=True, flash=True):
+    opts = Options()
+    opts.headless = headless
+    prof = selenium.webdriver.FirefoxProfile()
+    # http://kb.mozillazine.org/Network.proxy.type
+    prof.set_preference("network.proxy.type", proxy)
+    if not image:
+        prof.set_preference('permissions.default.image', 2)
+    if not flash:
+        prof.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+    prof.update_preferences()
+    return selenium.webdriver.Firefox(firefox_profile=prof, options=opts)
+
+
 class BrowserManager(object):
-    def __init__(self, preferences=None):
-        if not preferences:
-            self.driver = webdriver.Firefox()
-            return
-        profile = webdriver.FirefoxProfile()
-        for key, val in preferences.items():
-            profile.set_preference(key, val)
-        profile.update_preferences()
-        self.driver = webdriver.Firefox(firefox_profile=profile)
+    def __init__(self, driver):
+        self.driver = driver
 
     def select_one(self, selector, retry=5, sleep=5):
         return until_success(
