@@ -3,10 +3,10 @@
 
 from __future__ import division, print_function
 
-import multiprocessing.pool
 import pickle
 import threading
 import time
+import traceback
 
 import selenium.webdriver
 from selenium.webdriver.firefox.options import Options
@@ -47,6 +47,15 @@ def get_firfox_driver(headless=False, proxy=5, image=True, flash=True):
 class Browser(object):
     def __init__(self, driver):
         self.driver = driver
+
+    def get(self, url, extractor=None):
+        self.driver.get(url)
+        if extractor is None:
+            return self.driver.page_source
+        return extractor(self)
+
+    def get_many(self, urls, extractor=None):
+        return [self.driver.get(url, extractor) for url in urls]
 
     def select_one(self, selector, retry=5, sleep=5):
         return until_success(
@@ -107,22 +116,32 @@ BrowserManager = Browser
 
 
 class BrowserPool(object):
-    def __init__(self, num_proc=3, driver_maker=None, extractor=None):
-        self.executor = multiprocessing.pool.ThreadPool(num_proc)
-        self.driver_maker = driver_maker or get_simplistic_driver
+    def __init__(self, size=3, driver_maker=None, extractor=None):
+        # self.thrpool = multiprocessing.pool.ThreadPool(size)
+        if driver_maker is None:
+            driver_maker = get_simplistic_driver
+        self.browsers = [Browser(driver_maker()) for _ in range(size)]
         self.extractor = extractor
 
-    def get(self, url):
-        local = threading.local()
-        br = getattr(local, 'br', None)
-        if br is None:
-            br = Browser(self.driver_maker())
-            setattr(local, 'br', br)
-        br.driver.get(url)
-        if self.extractor is not None:
-            return self.extractor(br)
-        return br.driver.page_source
+    @staticmethod
+    def _get(br, urls, results):
+        while urls:
+            url = urls.pop()
+            try:
+                results[url] = br.get(url)
+            except BaseException:
+                results[url] = traceback.format_exc()
 
     def map(self, urls):
-        return self.executor.map(self.get, urls)
+        urls = list(urls)
+        rev_urls = urls[::-1]
+        results = {}
+        threads = []
+        for br in self.browsers:
+            thr = threading.Thread(target=self._get, args=(br, urls, results))
+            thr.start()
+            threads.append(thr)
+        for thr in threads:
+            thr.join()
+        return [results[url] for url in rev_urls]
 
