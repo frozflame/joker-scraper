@@ -3,7 +3,9 @@
 
 from __future__ import division, print_function
 
+import multiprocessing.pool
 import pickle
+import threading
 import time
 
 import selenium.webdriver
@@ -42,7 +44,7 @@ def get_firfox_driver(headless=False, proxy=5, image=True, flash=True):
     return selenium.webdriver.Firefox(firefox_profile=prof, options=opts)
 
 
-class BrowserManager(object):
+class Browser(object):
     def __init__(self, driver):
         self.driver = driver
 
@@ -58,8 +60,8 @@ class BrowserManager(object):
             retry, sleep, selector,
         )
 
-    def fetch_image(self, url):
-        self.driver.get(url)
+    # def fetch_image(self, url):
+    #     self.driver.get(url)
 
     def close_all_but(self, handle):
         for h in self.driver.window_handles:
@@ -99,3 +101,28 @@ class BrowserManager(object):
             si = '{}/{}'.format(i, len(elements))
             tx = ' '.join(elem.text.splitlines())[:100]
             print('-', si, repr(sl), tx, **kwargs)
+
+
+BrowserManager = Browser
+
+
+class BrowserPool(object):
+    def __init__(self, num_proc=3, driver_maker=None, extractor=None):
+        self.executor = multiprocessing.pool.ThreadPool(num_proc)
+        self.driver_maker = driver_maker or get_simplistic_driver
+        self.extractor = extractor
+
+    def get(self, url):
+        local = threading.local()
+        br = getattr(local, 'br', None)
+        if br is None:
+            br = Browser(self.driver_maker())
+            setattr(local, 'br', br)
+        br.driver.get(url)
+        if self.extractor is not None:
+            return self.extractor(br)
+        return br.driver.page_source
+
+    def map(self, urls):
+        return self.executor.map(self.get, urls)
+
