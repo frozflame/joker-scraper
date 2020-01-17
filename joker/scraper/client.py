@@ -28,6 +28,7 @@ class DummyCache(object):
 
 class _CacheWrapper(object):
     """Bypass cache when key is None"""
+
     def __init__(self, cache):
         self._cache = cache
 
@@ -52,8 +53,8 @@ class Client(object):
 
     @staticmethod
     def keygen(url, **kwargs):
-        method = kwargs.get('method')
-        if not method or method.lower() == 'get':
+        method = kwargs.get('method', 'get')
+        if method.lower() == 'get':
             return url
 
     @staticmethod
