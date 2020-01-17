@@ -26,30 +26,65 @@ class DummyCache(object):
         pass
 
 
+class _CacheWrapper(object):
+    """Bypass cache when key is None"""
+    def __init__(self, cache):
+        self._cache = cache
+
+    def load(self, key):
+        if key is not None:
+            return self._cache.load(key)
+
+    def save(self, key, content):
+        if key is not None:
+            return self._cache.save(key, content)
+
+
 class Client(object):
     def __init__(self, cache):
         self.sess = requests.Session()
         self.sess.headers['User-Agent'] = get_useragent()
-        self.cache = cache
+        self.cache = _CacheWrapper(cache)
 
     @classmethod
     def cacheless(cls):
         return cls(DummyCache())
 
-    @classmethod
-    def keygen(cls, url):
-        return url
+    @staticmethod
+    def keygen(url, **kwargs):
+        method = kwargs.get('method')
+        if not method or method.lower() == 'get':
+            return url
 
-    def get_pages(self, urls):
-        headers = {}
-        for url in urls:
-            if not url:
-                self.sess.headers.pop('Referer', 0)
-                continue
-            key = self.keygen(url)
-            content = self.cache.load(key)
-            if content is None:
-                content = self.sess.get(url, headers=headers).content
-                self.cache.save(key, content)
-            self.sess.headers['Referer'] = url
-            yield content
+    @staticmethod
+    def pause(maxsec):
+        if maxsec <= 0:
+            return
+        time.sleep(time.time() % maxsec)
+
+    def request(self, url, **kwargs):
+        if not url:
+            self.sess.headers.pop('Referer', 0)
+            return
+        key = self.keygen(url, **kwargs)
+        content = self.cache.load(key)
+        if content is None:
+            kwargs.setdefault('method', 'get')
+            resp = self.sess.request(url=url, **kwargs)
+            content = resp.content
+            self.cache.save(key, content)
+        self.sess.headers['Referer'] = url
+        return content
+
+    def post(self, url, **kwargs):
+        kwargs.setdefault('method', 'post')
+        return self.request(url, **kwargs)
+
+    def get(self, url):
+        return self.request(url)
+
+    def batch_get(self, targets):
+        for tar in targets:
+            if isinstance(tar, (int, float)):
+                yield self.pause(tar)
+            yield self.get(tar)
