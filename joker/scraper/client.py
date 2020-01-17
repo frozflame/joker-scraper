@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import time
 import requests
 
-
-default_useragent = (
+useragents = (
     'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) '
-    'Gecko/20100101 Firefox/64.0'
+    'Gecko/20100101 Firefox/64.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) '
+    'AppleWebKit/537.36 (KHTML, like Gecko) '
+    'Chrome/51.0.2704.103 Safari/537.36',
 )
+
+
+def get_useragent():
+    i = int(time.time()) % len(useragents)
+    return useragents[i]
 
 
 class DummyCache(object):
@@ -21,7 +29,7 @@ class DummyCache(object):
 class Client(object):
     def __init__(self, cache):
         self.sess = requests.Session()
-        self.sess.headers['User-Agent'] = default_useragent
+        self.sess.headers['User-Agent'] = get_useragent()
         self.cache = cache
 
     @classmethod
@@ -45,4 +53,3 @@ class Client(object):
                 self.cache.save(key, content)
             self.sess.headers['Referer'] = url
             yield content
-
