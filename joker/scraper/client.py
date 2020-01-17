@@ -10,10 +10,27 @@ default_useragent = (
 )
 
 
+class DummyCache(object):
+    def load(self, key):
+        pass
+
+    def save(self, key, content):
+        pass
+
+
 class Client(object):
-    def __init__(self):
-        self.sess = requests.session()
+    def __init__(self, cache):
+        self.sess = requests.Session()
         self.sess.headers['User-Agent'] = default_useragent
+        self.cache = cache
+
+    @classmethod
+    def cacheless(cls):
+        return cls(DummyCache())
+
+    @classmethod
+    def keygen(cls, url):
+        return url
 
     def get_pages(self, urls):
         headers = {}
@@ -21,8 +38,11 @@ class Client(object):
             if not url:
                 self.sess.headers.pop('Referer', 0)
                 continue
-            resp = self.sess.get(url, headers=headers)
+            key = self.keygen(url)
+            content = self.cache.load(key)
+            if content is None:
+                content = self.sess.get(url, headers=headers).content
+                self.cache.save(key, content)
             self.sess.headers['Referer'] = url
-            print(self.sess.headers)
-            yield resp
+            yield content
 
