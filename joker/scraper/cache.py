@@ -10,14 +10,14 @@ import traceback
 logger = logging.getLogger(__name__)
 
 
-class SimpleDiskCache(object):
+class DiskCache(object):
     def __init__(self, dirpath):
         if not os.path.isdir(dirpath):
             raise ValueError('not a dir: ' + dirpath)
         self.dirpath = dirpath
 
-    def get(self, name):
-        path = os.path.join(self.dirpath, name)
+    def load(self, key):
+        path = os.path.join(self.dirpath, key)
         if not os.path.exists(path):
             return
         logger.debug('use cached: ' + path)
@@ -31,10 +31,13 @@ class SimpleDiskCache(object):
         except IOError:
             traceback.print_exc()
 
-    def set(self, name, content):
-        path = os.path.join(self.dirpath, name)
+    def save(self, key, content):
+        path = os.path.join(self.dirpath, key)
         hb = hashlib.md5(content).digest()
         with gzip.open(path, 'wb') as fout:
             fout.write(content)
             fout.write(hb)
         return content
+
+
+SimpleDiskCache = DiskCache
