@@ -3,3 +3,5 @@ requests
 lxml
 selenium
 six
+joker
+joker-cast
