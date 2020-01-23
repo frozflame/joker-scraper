@@ -46,7 +46,7 @@ def get_firfox_driver(headless=False, proxy=5, image=True, flash=True):
 
 class Browser(object):
     def __init__(self, driver=None):
-        self.driver = driver or get_firfox_driver()
+        self.driver = driver or get_simplistic_driver()
 
     def get(self, url, extractor=None):
         self.driver.get(url)
