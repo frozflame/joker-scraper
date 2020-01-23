@@ -45,8 +45,8 @@ def get_firfox_driver(headless=False, proxy=5, image=True, flash=True):
 
 
 class Browser(object):
-    def __init__(self, driver):
-        self.driver = driver
+    def __init__(self, driver=None):
+        self.driver = driver or get_firfox_driver()
 
     def get(self, url, extractor=None):
         self.driver.get(url)
@@ -55,7 +55,7 @@ class Browser(object):
         return extractor(self)
 
     def get_many(self, urls, extractor=None):
-        return [self.driver.get(url, extractor) for url in urls]
+        return [self.get(url, extractor) for url in urls]
 
     def select_one(self, selector, retry=5, sleep=5):
         return until_success(
