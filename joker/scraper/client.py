@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # coding: utf-8
-
+import logging
 import time
 import requests
+
+logger = logging.getLogger(__name__)
 
 useragents = (
     'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) '
@@ -70,6 +72,7 @@ class Client(object):
         key = self.keygen(url, **kwargs)
         content = self.cache.load(key)
         if content is None:
+            logger.debug('cache miss: %s', url)
             kwargs.setdefault('method', 'get')
             resp = self.sess.request(url=url, **kwargs)
             content = resp.content
