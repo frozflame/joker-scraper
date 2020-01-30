@@ -71,3 +71,4 @@ alembic.ini
 
 *.swp
 
+_legacy.py
