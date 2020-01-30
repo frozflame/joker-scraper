@@ -10,9 +10,10 @@ logger = logging.getLogger(__name__)
 useragents = (
     'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) '
     'Gecko/20100101 Firefox/64.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) '
-    'AppleWebKit/537.36 (KHTML, like Gecko) '
-    'Chrome/51.0.2704.103 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.37 '
+    '(KHTML, like Gecko) Chrome/39.0.2171.88 Safari/537.37',
 )
 
 
@@ -42,6 +43,22 @@ class _CacheWrapper(object):
     def save(self, key, content):
         if key is not None:
             return self._cache.save(key, content)
+
+
+class CachedResponse(object):
+    __slots__ = ['content', 'url']
+    status_code = 0
+    reason = 'Cached'
+
+    def __init__(self, content, url):
+        self.content = content
+        self.url = url
+
+    @property
+    def text(self):
+        import chardet
+        encoding = chardet.detect(self.content)['encoding']
+        return self.content.decode(encoding)
 
 
 class Client(object):
@@ -76,10 +93,10 @@ class Client(object):
             logger.debug('cache miss: %s', url)
             kwargs.setdefault('method', 'get')
             resp = self.sess.request(url=url, **kwargs)
-            content = resp.content
-            self.cache.save(key, content)
+            self.cache.save(key, resp.content)
+            return resp
         self.sess.headers['Referer'] = url
-        return content
+        return CachedResponse(content, url)
 
     def post(self, url, **kwargs):
         kwargs.setdefault('method', 'post')
