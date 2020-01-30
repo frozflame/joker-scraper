@@ -6,4 +6,3 @@ selenium
 six
 joker
 joker-cast
-joker-diskcache>=0.3
