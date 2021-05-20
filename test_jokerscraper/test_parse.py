@@ -3,7 +3,7 @@
 
 from __future__ import unicode_literals
 
-from joker.scraper.parse import asnum, asint
+from joker.scraper.parser import asnum, asint
 from bs4 import BeautifulSoup
 
 
