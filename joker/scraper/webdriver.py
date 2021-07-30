@@ -86,37 +86,38 @@ class OperaExtended(Opera, WebDriverExtendedMixin):
     pass
 
 
+def get_firefox(
+        headless=False, extended=True, profile=None, preferences=None,
+        proxy=5, image=True, sound=False, flash=True, **kwargs):
+    """get firefox webdriver with option shortcuts"""
+
+    opts = Options()
+    opts.headless = headless
+    if profile is None:
+        profile = selenium.webdriver.FirefoxProfile()
+    pref = profile.set_preference
+
+    preferences = preferences or {}
+    for k, v in preferences.items():
+        pref(k, v)
+
+    # http://kb.mozillazine.org/Network.proxy.type
+    pref("network.proxy.type", proxy)
+
+    if not image:
+        pref('permissions.default.image', 2)
+    if not flash:
+        pref('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+    if not sound:
+        pref("media.volume_scale", "0.0")
+
+    profile.update_preferences()
+    cls = FirefoxExtended if extended else Firefox
+    return cls(firefox_profile=profile, options=opts, **kwargs)
+
+
+get_firfox_driver = get_firefox
+
+
 def get_simplistic_driver():
-    prof = selenium.webdriver.FirefoxProfile()
-    prof.set_preference('permissions.default.image', 2)
-    prof.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    prof.set_preference("media.volume_scale", "0.0")
-    return selenium.webdriver.Firefox(firefox_profile=prof)
-
-
-def get_firfox_driver(headless=False, proxy=5, image=True, flash=True):
-    opts = Options()
-    opts.headless = headless
-    prof = selenium.webdriver.FirefoxProfile()
-    # http://kb.mozillazine.org/Network.proxy.type
-    prof.set_preference("network.proxy.type", proxy)
-    if not image:
-        prof.set_preference('permissions.default.image', 2)
-    if not flash:
-        prof.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    prof.update_preferences()
-    return selenium.webdriver.Firefox(firefox_profile=prof, options=opts)
-
-
-def get_extended_firfox(headless=False, proxy=5, image=True, flash=True):
-    opts = Options()
-    opts.headless = headless
-    prof = selenium.webdriver.FirefoxProfile()
-    # http://kb.mozillazine.org/Network.proxy.type
-    prof.set_preference("network.proxy.type", proxy)
-    if not image:
-        prof.set_preference('permissions.default.image', 2)
-    if not flash:
-        prof.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    prof.update_preferences()
-    return FirefoxExtended(firefox_profile=prof, options=opts)
+    return get_firefox(image=False, sound=False, flash=False)
