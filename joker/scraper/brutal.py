@@ -34,7 +34,8 @@ def url_parentheses_reap(html, pattern=None):
 
 
 known_schemes = [
-    'http', 'https', 'ftp', 'ed2k', 'magnet', 'freenet', 'thunder']
+    'http', 'https', 'ftp', 'ed2k', 'magnet', 'freenet', 'thunder',
+]
 
 
 def url_scheme_reap(html, pattern=None):
@@ -55,3 +56,7 @@ def brutal_link_reap(html, pattern):
         yield link
     for link in url_scheme_reap(html, pattern=pattern):
         yield link
+
+
+def remove_script_tags(html: str):
+    return re.sub(r'<script[^>]*>.*?</script>', '', html, re.IGNORECASE | re.DOTALL)
