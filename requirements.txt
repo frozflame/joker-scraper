@@ -1,7 +1,7 @@
 chardet
 beautifulsoup4
 requests
-lxml
+lxml>=4.6.3
 selenium
 six
 joker

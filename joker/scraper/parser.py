@@ -3,10 +3,12 @@
 
 import re
 
+from bs4 import BeautifulSoup
+from bs4.element import Tag, Comment
 from joker.cast import regular_cast
 
 
-def astext(soup):
+def astext(soup: Tag):
     try:
         return soup.text
     except AttributeError:
@@ -37,3 +39,31 @@ def attribute_extract(soup, css_selector, attrname, pattern=None):
         if pattern and re.search(pattern, val) is None:
             continue
         yield val
+
+
+def remove_scripts(tag: Tag):
+    for el in tag.select('script'):
+        el.decompose()
+
+
+def remove_comments(tag: Tag):
+    for el in tag.find_all(string=lambda t: isinstance(t, Comment)):
+        el.extract()
+
+
+class ExtendedSoup(BeautifulSoup):
+    def __init__(self, markup: str, features='lxml', *args, **kwargs):
+        super().__init__(markup, features, *args, **kwargs)
+
+    def insert_before(self, *args):
+        pass
+
+    def insert_after(self, *args):
+        pass
+
+    remove_scripts = remove_scripts
+    remove_comments = remove_comments
+
+    def save_html(self, path: str):
+        with open(path, 'w') as fout:
+            fout.write(str(self))

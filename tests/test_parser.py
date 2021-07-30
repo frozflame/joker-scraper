@@ -3,13 +3,12 @@
 
 from __future__ import unicode_literals
 
-from joker.scraper.parser import asnum, asint
-from bs4 import BeautifulSoup
+from joker.scraper.parser import asnum, asint, ExtendedSoup
 
 
 def _make_soup(s):
     html = '<a id="a">{}</a>'.format(s)
-    soup = BeautifulSoup(html, 'lxml')
+    soup = ExtendedSoup(html)
     return soup.select_one('a#a')
 
 
