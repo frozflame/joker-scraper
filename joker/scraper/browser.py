@@ -3,43 +3,10 @@
 
 import pickle
 import threading
-import time
 import traceback
 
-import selenium.webdriver
-from selenium.webdriver.firefox.options import Options
-
-
-def get_simplistic_driver():
-    prof = selenium.webdriver.FirefoxProfile()
-    prof.set_preference('permissions.default.image', 2)
-    prof.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    prof.set_preference("media.volume_scale", "0.0")
-    return selenium.webdriver.Firefox(firefox_profile=prof)
-
-
-def until_success(func, retry, sleep, *args, **kwargs):
-    for ix in reversed(range(retry + 1)):
-        try:
-            return func(*args, **kwargs)
-        except Exception:
-            time.sleep(sleep)
-            if ix == 0:
-                raise
-
-
-def get_firfox_driver(headless=False, proxy=5, image=True, flash=True):
-    opts = Options()
-    opts.headless = headless
-    prof = selenium.webdriver.FirefoxProfile()
-    # http://kb.mozillazine.org/Network.proxy.type
-    prof.set_preference("network.proxy.type", proxy)
-    if not image:
-        prof.set_preference('permissions.default.image', 2)
-    if not flash:
-        prof.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    prof.update_preferences()
-    return selenium.webdriver.Firefox(firefox_profile=prof, options=opts)
+from joker.scraper.utils import until_success
+from joker.scraper.webdriver import get_simplistic_driver
 
 
 class Browser(object):
